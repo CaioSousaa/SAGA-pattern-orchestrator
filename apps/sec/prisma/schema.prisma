@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Saga {
+  id          String @id @unique @default(uuid())
+  status      Status
+  name_flow   String
+  action      Action[] 
+  created_at  DateTime
+
+  @@map("sec")
+}
+
+model Action {
+  id          Int @id @unique @default(autoincrement())
+  name_action String
+  saga_id     String
+  saga        Saga @relation(references: [id], fields: [saga_id], onDelete: Cascade, onUpdate: Cascade)
+  created_at  DateTime
+
+  @@map("action")
+}
+
+enum Status {
+  PENDING
+  COMPLETED
+  IN_PROGRESS
+  FAILED
+  ACTION_COMPENSATORY
+  COMPENSATED
+}
