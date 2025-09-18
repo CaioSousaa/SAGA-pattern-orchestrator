@@ -13,7 +13,6 @@ model Inventory {
   itemId      String       @unique
   item        Item         @relation(fields: [itemId], references: [id])
   quantity    Int          @default(0)
-  reserved    Int          @default(0) 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   moviments   Moviment[]
@@ -21,8 +20,7 @@ model Inventory {
 
 model Item {
   id          String       @id @default(uuid())
-  productId   String       
-  name        String?      
+  name        String      
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   inventory   Inventory?
@@ -36,7 +34,7 @@ model Moviment {
   type        MovimentType
   quantity    Int
   createdAt   DateTime     @default(now())
-  inventoryId String?
+  inventoryId String
   inventory   Inventory?   @relation(fields: [inventoryId], references: [id])
 }
 
