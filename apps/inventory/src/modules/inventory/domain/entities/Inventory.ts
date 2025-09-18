@@ -6,38 +6,34 @@ export class Inventory {
   itemId: string;
   item?: Item;
   quantity: number;
-  reserved: number;
   location?: string;
-  created_at: Date;
+  createdAt: Date;
   moviments?: Moviment[];
 
   constructor({
     itemId,
     item,
     quantity,
-    reserved,
     location,
-    created_at,
+    createdAt,
     moviments,
   }: Inventory) {
     Object.assign(this, {
       itemId,
       item,
       quantity,
-      reserved,
       location,
-      created_at,
+      createdAt,
       moviments,
     });
   }
 
-  static create({ itemId, quantity, reserved, location }: Inventory) {
+  static create({ itemId, quantity, location }: Inventory) {
     const inventory = new Inventory({
       itemId,
       quantity,
-      reserved,
       location,
-      created_at: new Date(),
+      createdAt: new Date(),
     });
 
     return inventory;

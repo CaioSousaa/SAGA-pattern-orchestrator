@@ -5,15 +5,15 @@ export class Client {
   name: string;
   email: string;
   balance: number;
-  created_at: Date;
+  createdAt: Date;
   orders?: Order[];
 
-  constructor({ name, email, balance, created_at, orders }: Client) {
+  constructor({ name, email, balance, createdAt, orders }: Client) {
     Object.assign(this, {
       name,
       email,
       balance,
-      created_at,
+      createdAt,
       orders,
     });
   }
@@ -23,7 +23,7 @@ export class Client {
       name,
       email,
       balance,
-      created_at: new Date(),
+      createdAt: new Date(),
     });
 
     return client;

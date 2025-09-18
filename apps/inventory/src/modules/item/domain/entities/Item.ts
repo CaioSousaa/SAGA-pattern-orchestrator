@@ -3,27 +3,24 @@ import { Moviment } from 'src/modules/moviment/domain/entities/Moviment';
 
 export class Item {
   id?: string;
-  productId: string;
-  name?: string;
-  created_at: Date;
+  name: string;
+  createdAt: Date;
   inventory?: Inventory;
   moviments?: Moviment[];
 
-  constructor({ productId, name, created_at, inventory, moviments }: Item) {
+  constructor({ name, createdAt, inventory, moviments }: Item) {
     Object.assign(this, {
-      productId,
       name,
-      created_at,
+      createdAt,
       inventory,
       moviments,
     });
   }
 
-  static create({ productId, name }: Item) {
+  static create({ name }: Item) {
     const item = new Item({
-      productId,
       name,
-      created_at: new Date(),
+      createdAt: new Date(),
     });
 
     return item;

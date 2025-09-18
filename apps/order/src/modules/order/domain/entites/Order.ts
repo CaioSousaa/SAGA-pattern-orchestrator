@@ -9,7 +9,7 @@ export class Order {
   product?: Product;
   quantity: number;
   total: number;
-  created_at: Date;
+  createdAt: Date;
 
   constructor({
     clientId,
@@ -18,7 +18,7 @@ export class Order {
     product,
     quantity,
     total,
-    created_at,
+    createdAt,
   }: Order) {
     Object.assign(this, {
       clientId,
@@ -27,7 +27,7 @@ export class Order {
       product,
       quantity,
       total,
-      created_at,
+      createdAt,
     });
   }
 
@@ -37,7 +37,7 @@ export class Order {
       productId,
       quantity,
       total,
-      created_at: new Date(),
+      createdAt: new Date(),
     });
 
     return order;

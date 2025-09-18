@@ -5,6 +5,13 @@ import prisma from '../../../../../database/prisma/prismaClient';
 import { Status } from 'generated/prisma';
 
 export class PrismaSagaRepository implements ISagaRepositoryPort {
+  public async update(sagaId: string, status: Status): Promise<Saga> {
+    return prisma.saga.update({
+      where: { id: sagaId },
+      data: { status: status },
+    });
+  }
+
   public async create({
     name_flow,
     status,

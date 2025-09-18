@@ -1,26 +1,22 @@
 import { Payment } from 'src/modules/payment/domain/entities/Payment';
 
 export class Customer {
-  id?: string;
-  name: string;
-  email: string;
+  id: string;
   balance: number;
   created_at: Date;
   payment?: Payment[];
 
-  constructor({ name, email, balance, created_at }: Customer) {
+  constructor({ id, balance, created_at }: Customer) {
     Object.assign(this, {
-      name,
+      id,
       balance,
-      email,
       created_at,
     });
   }
 
-  static create({ name, email, balance }: Customer) {
+  static create({ id, balance }: Customer) {
     const customer = new Customer({
-      name,
-      email,
+      id,
       balance,
       created_at: new Date(),
     });

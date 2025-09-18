@@ -1,0 +1,6 @@
+export interface ICreateClientDTO {
+  id: string;
+  name: string;
+  email: string;
+  balance: number;
+}

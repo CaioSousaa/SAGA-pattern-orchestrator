@@ -1,23 +1,16 @@
+import { MovimentType } from 'generated/prisma';
 import { Inventory } from 'src/modules/inventory/domain/entities/Inventory';
 import { Item } from 'src/modules/item/domain/entities/Item';
-
-export enum MovimentType {
-  IN = 'IN',
-  OUT = 'OUT',
-  RESERVE = 'RESERVE',
-  RELEASE = 'RELEASE',
-  ADJUST = 'ADJUST',
-}
 
 export class Moviment {
   id?: string;
   itemId: string;
   item?: Item;
-  inventoryId?: string;
+  inventoryId: string;
   inventory?: Inventory;
   type: MovimentType;
   quantity: number;
-  created_at: Date;
+  createdAt: Date;
 
   constructor({
     itemId,
@@ -26,7 +19,7 @@ export class Moviment {
     inventory,
     type,
     quantity,
-    created_at,
+    createdAt,
   }: Moviment) {
     Object.assign(this, {
       itemId,
@@ -35,7 +28,7 @@ export class Moviment {
       inventory,
       type,
       quantity,
-      created_at,
+      createdAt,
     });
   }
 
@@ -45,7 +38,7 @@ export class Moviment {
       type,
       quantity,
       inventoryId,
-      created_at: new Date(),
+      createdAt: new Date(),
     });
 
     return moviment;

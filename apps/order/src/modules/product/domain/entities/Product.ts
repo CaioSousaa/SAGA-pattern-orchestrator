@@ -4,14 +4,14 @@ export class Product {
   id?: string;
   name: string;
   price: number;
-  created_at: Date;
+  createdAt: Date;
   orders?: Order[];
 
-  constructor({ name, price, created_at, orders }: Product) {
+  constructor({ name, price, createdAt, orders }: Product) {
     Object.assign(this, {
       name,
       price,
-      created_at,
+      createdAt,
       orders,
     });
   }
@@ -20,7 +20,7 @@ export class Product {
     const product = new Product({
       name,
       price,
-      created_at: new Date(),
+      createdAt: new Date(),
     });
 
     return product;
