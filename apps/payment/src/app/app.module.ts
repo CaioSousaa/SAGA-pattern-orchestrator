@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PaymentModule } from 'src/modules/payment/payment.module';
+import { UseCasesModule } from 'src/usecases/usecases.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), PaymentModule],
+  imports: [ConfigModule.forRoot(), UseCasesModule],
   controllers: [],
   providers: [],
 })

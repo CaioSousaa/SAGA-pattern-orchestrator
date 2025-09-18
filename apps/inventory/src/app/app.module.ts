@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { MovimentModule } from 'src/modules/moviment/moviment.module';
+import { UseCasesModule } from 'src/usecases/usecases.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), MovimentModule],
+  imports: [ConfigModule.forRoot(), UseCasesModule],
   controllers: [],
   providers: [],
 })
