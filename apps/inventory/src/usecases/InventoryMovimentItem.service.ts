@@ -66,16 +66,18 @@ export class InventoryMovimentItemService {
             inventoryId: inventoryItem.id!,
             itemId: inventoryItem.itemId,
             type: MovimentType.OUT,
+            quantity,
           });
 
           const sentMessage = JSON.stringify({
-            movimentId: newMoviment.id,
+            id: newMoviment.id,
             sagaId,
-            status: 200,
+            statusCode: 200,
+            service_name: 'moviment_service',
           });
 
           await this.producer.send({
-            topic: 'sucess-transation-in-inventory',
+            topic: 'micro-transation-in-inventory-success',
             messages: [{ value: sentMessage }],
           });
 

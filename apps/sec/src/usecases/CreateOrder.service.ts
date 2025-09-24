@@ -1,11 +1,11 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Producer, Consumer } from 'kafkajs';
+import { Producer } from 'kafkajs';
 import { PrismaActionsRepository } from '../infra/prisma/repositories/PrismaActionsRepository';
 import { PrismaSagaRepository } from '../infra/prisma/repositories/PrismaSagaRepository';
 import { Status } from 'generated/prisma';
 import { kafka } from '../core/config/kafka';
-import { SagaTopics } from 'src/core/domain/enums/TopicsEnum';
 import { validateRequest } from './utils/function/validateRequestCreateOrderService';
+import { SagaTopicsSent } from 'src/core/domain/enums/TopicsEnum';
 
 export interface IRequest {
   userId: string;
@@ -26,7 +26,6 @@ export interface IResponse {
 @Injectable()
 export class CreateOrderService implements OnModuleInit {
   private producer: Producer;
-  private consumer: Consumer;
 
   constructor(
     private readonly prismaActionsRepository: PrismaActionsRepository,
@@ -36,30 +35,16 @@ export class CreateOrderService implements OnModuleInit {
   async onModuleInit() {
     this.producer = kafka.producer();
     await this.producer.connect();
-    console.log('[KAFKA-INITIAL-FLOW PRODUCER CONNECTED]');
-
-    this.consumer = kafka.consumer({ groupId: 'saga-create-order-group' });
-    await this.consumer.connect();
-    console.log('[KAFKA-INITIAL-FLOW CONSUMER CONNECTED]');
-
-    await this.consumer.subscribe({ topic: SagaTopics.ORDER });
-
-    await this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        console.log(
-          `[KAFKA MESSAGE RECEIVED] Topic: ${topic} | Value: ${message.value?.toString()}`,
-        );
-      },
-    });
+    console.log('[KAFKA-PRODUCER CONNECTED]');
   }
 
-  private async sendMessage(message: string, topic: SagaTopics) {
+  private async sendMessage(message: string, topic: SagaTopicsSent) {
     await this.producer.send({
       topic,
       messages: [{ value: message }],
     });
 
-    console.log(`Message ${message} sent to topic ${topic}`);
+    console.log(`[KAFKA MESSAGE SENT] Topic: ${topic} | Value: ${message}`);
   }
 
   public async execute(data?: IRequest): Promise<IResponse> {
@@ -72,7 +57,7 @@ export class CreateOrderService implements OnModuleInit {
       });
 
       await this.prismaActionsRepository.create({
-        name_action: 'create order',
+        name_action: 'sent: create order',
         saga_id: saga.id!,
       });
 
@@ -81,7 +66,10 @@ export class CreateOrderService implements OnModuleInit {
         sagaId: saga.id,
       };
 
-      await this.sendMessage(JSON.stringify(message), SagaTopics.INITIAL_FLOW);
+      await this.sendMessage(
+        JSON.stringify(message),
+        SagaTopicsSent.INITIAL_FLOW,
+      );
 
       return {
         status: 'success',

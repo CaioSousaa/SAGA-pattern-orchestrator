@@ -12,9 +12,10 @@ export class PrismaMovimentRepository implements IMovimentRepositoryPort {
     inventoryId,
     itemId,
     type,
+    quantity,
   }: IMovimentCreate): Promise<Moviment> {
     return await prisma.moviment.create({
-      data: { inventoryId, itemId, type, quantity: 0 },
+      data: { inventoryId, itemId, type, quantity },
     });
   }
 

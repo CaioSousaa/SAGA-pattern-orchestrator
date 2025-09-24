@@ -57,13 +57,25 @@ export class ValidatePaymentService {
             productId,
           });
 
+          const newBalance = customer.balance - Number(total);
+
+          await this.customerRepo.update(customer.id, newBalance);
+
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+
           const eventMessage = JSON.stringify({
             sagaId,
-            paymentId: payment.id,
+            id: payment.id,
+            statusCode: 200,
+            service_name: 'payment_service',
+            data: {
+              newBalance,
+              customerId: customer.id,
+            },
           });
 
           await this.producer.send({
-            topic: 'payment-success',
+            topic: 'micro-payment-success',
             messages: [{ value: eventMessage }],
           });
 

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { kafka } from '../../core/config/kafka';
 import { Consumer, Producer } from 'kafkajs';
 import { OrderPrismarRepository } from 'src/infra/prisma/repositories/OrderPrismaRepository';
 import { ProductPrismarRepository } from 'src/infra/prisma/repositories/ProductPrismaRepository';
 import { ClientPrismarRepository } from 'src/infra/prisma/repositories/ClientPrismaRepository';
+import { kafka } from 'src/core/config/kafka';
 
 @Injectable()
 export class ClientOrderProductService {
@@ -28,25 +28,25 @@ export class ClientOrderProductService {
 
     await this.consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
+        const rawValue = message.value?.toString();
+
+        const data = rawValue ? JSON.parse(rawValue) : null;
+
+        if (!data) return;
+
+        let {
+          userId,
+          name,
+          email,
+          balance,
+          productId,
+          name_product,
+          price,
+          quantity,
+          sagaId,
+        } = data;
+
         try {
-          const rawValue = message.value?.toString();
-
-          const data = rawValue ? JSON.parse(rawValue) : null;
-
-          if (!data) return;
-
-          let {
-            userId,
-            name,
-            email,
-            balance,
-            productId,
-            name_product,
-            price,
-            quantity,
-            sagaId,
-          } = data;
-
           const clientExists = await this.clientPrismarRepository.findClient(
             String(userId),
           );
@@ -97,10 +97,12 @@ export class ClientOrderProductService {
             balance,
             sagaId,
             quantity,
+            status: 200,
+            service: 'order-service',
           });
 
           await this.producer.send({
-            topic: 'micro-order',
+            topic: 'micro-order-success',
             messages: [{ value: sendMessage }],
           });
 
@@ -114,6 +116,18 @@ export class ClientOrderProductService {
           console.log('[ORDER MICRO] Order saved successfully!');
         } catch (error) {
           console.error('[ORDER MICRO] Error processing Kafka message:', error);
+          await this.producer.send({
+            topic: 'micro-order-failed',
+            messages: [
+              {
+                value: JSON.stringify({
+                  sagaId,
+                  service: 'order-service',
+                  status: 400,
+                }),
+              },
+            ],
+          });
         }
       },
     });

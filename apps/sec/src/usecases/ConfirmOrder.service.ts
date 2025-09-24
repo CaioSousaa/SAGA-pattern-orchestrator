@@ -1,10 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotImplementedException } from '@nestjs/common';
 import { PrismaActionsRepository } from '../infra/prisma/repositories/PrismaActionsRepository';
 import { PrismaSagaRepository } from '../infra/prisma/repositories/PrismaSagaRepository';
 import { Consumer, Producer } from 'kafkajs';
 import { kafka } from 'src/core/config/kafka';
 import { Status } from 'generated/prisma';
-import { SagaTopics } from 'src/core/domain/enums/TopicsEnum';
+import {
+  SagaTopicsSent,
+  SagaTopicsSubscribe,
+} from 'src/core/domain/enums/TopicsEnum';
 
 @Injectable()
 export class ConfirmOrderService {
@@ -22,7 +25,9 @@ export class ConfirmOrderService {
     console.log('[KAFKA-CONFIRM-ORDER PRODUCER CONNECTED]');
 
     this.consumer = kafka.consumer({ groupId: 'confirm-order-group' });
-    await this.consumer.subscribe({ topic: SagaTopics.ORDER });
+    await this.consumer.subscribe({
+      topics: [SagaTopicsSubscribe.ORDER, SagaTopicsSubscribe.ORDER_FAILED],
+    });
 
     await this.consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
@@ -30,21 +35,33 @@ export class ConfirmOrderService {
           `[KAFKA MESSAGE RECEIVED] Topic: ${topic} | Value: ${message.value?.toString()}`,
         );
 
+        const rawValue = message.value?.toString();
+
+        const data = rawValue ? JSON.parse(rawValue) : null;
+
+        if (!data) return;
+
+        const { userId, sagaId, balance, productId, total, quantity, status } =
+          data;
+
         try {
-          const rawValue = message.value?.toString();
+          if (status === 400) {
+            await this.prismaSagaRepository.update(
+              String(sagaId),
+              Status.FAILED,
+            );
 
-          const data = rawValue ? JSON.parse(rawValue) : null;
-
-          if (!data) return;
-
-          const { userId, sagaId, balance, productId, total, quantity } = data;
+            console.error('order error, please try again');
+            return;
+          }
 
           await this.prismaSagaRepository.update(
             String(sagaId),
             Status.IN_PROGRESS,
           );
+
           await this.prismaActionsRepository.create({
-            name_action: 'confirm_order',
+            name_action: 'recevid: confirm_order',
             saga_id: sagaId,
           });
 
@@ -57,7 +74,7 @@ export class ConfirmOrderService {
           });
 
           this.producer.send({
-            topic: 'sent_payment',
+            topic: SagaTopicsSent.SENT_PAYMENT_SUCCESS,
             messages: [{ value: payment_message }],
           });
 
@@ -70,15 +87,27 @@ export class ConfirmOrderService {
           });
 
           this.producer.send({
-            topic: 'sent_inventory',
+            topic: SagaTopicsSent.SENT_INVENTORY_SUCCESS,
             messages: [{ value: inventory_message }],
           });
 
           console.log(
             `Message ${inventory_message} sent to topic sent_inventory`,
           );
+
+          await this.prismaActionsRepository.create({
+            name_action: 'sent: message_for_inventory',
+            saga_id: sagaId,
+          });
+          await this.prismaActionsRepository.create({
+            name_action: 'sent: message_for_payment',
+            saga_id: sagaId,
+          });
         } catch (error) {
-          console.error('[SEC MICRO] Error processing Kafka message:', error);
+          console.error(
+            '[SEC MICRO - CONFIRM_ODER] Error processing Kafka message:',
+            error,
+          );
         }
       },
     });

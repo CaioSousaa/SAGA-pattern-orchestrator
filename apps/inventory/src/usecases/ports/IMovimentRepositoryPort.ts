@@ -5,6 +5,7 @@ export interface IMovimentCreate {
   itemId: string;
   inventoryId: string;
   type: MovimentType;
+  quantity: number;
 }
 
 export interface IMovimentUpdate {
@@ -15,7 +16,7 @@ export interface IMovimentUpdate {
 }
 
 export interface IMovimentRepositoryPort {
-  create({ inventoryId, itemId }: IMovimentCreate): Promise<Moviment>;
+  create({ inventoryId, itemId, quantity }: IMovimentCreate): Promise<Moviment>;
   update(
     { inventoryId, itemId, quantity, type }: IMovimentUpdate,
     id: string,

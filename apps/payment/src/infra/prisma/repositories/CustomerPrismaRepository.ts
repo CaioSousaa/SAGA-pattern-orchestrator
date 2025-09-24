@@ -6,6 +6,12 @@ import {
 } from 'src/usecases/ports/ICustomerRepositoryPort';
 
 export class CustomerPrismarRepository implements ICustomerRepositoryPort {
+  public async update(id: string, balance: number): Promise<Customer> {
+    return await prisma.customer.update({
+      where: { id },
+      data: { balance },
+    });
+  }
   public async create({ balance, id }: CreateCustomerDTO): Promise<Customer> {
     return await prisma.customer.create({
       data: { balance, id },
