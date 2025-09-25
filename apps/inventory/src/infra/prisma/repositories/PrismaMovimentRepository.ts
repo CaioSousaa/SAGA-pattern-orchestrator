@@ -1,11 +1,9 @@
 import { MovimentType } from 'generated/prisma';
 import prisma from 'src/database/prisma/prismaCliente';
 import { Moviment } from 'src/core/domain/entities/Moviment';
-import {
-  IMovimentCreate,
-  IMovimentRepositoryPort,
-  IMovimentUpdate,
-} from 'src/usecases/ports/IMovimentRepositoryPort';
+import { IMovimentRepositoryPort } from 'src/usecases/ports/IMovimentRepositoryPort';
+import { ICreateMovimentDTO } from 'src/core/dtos/moviment/ICreateMovimentDTO';
+import { IUpdateMovimentDTO } from 'src/core/dtos/moviment/IUpdateMovimentDTO';
 
 export class PrismaMovimentRepository implements IMovimentRepositoryPort {
   public async create({
@@ -13,14 +11,14 @@ export class PrismaMovimentRepository implements IMovimentRepositoryPort {
     itemId,
     type,
     quantity,
-  }: IMovimentCreate): Promise<Moviment> {
+  }: ICreateMovimentDTO): Promise<Moviment> {
     return await prisma.moviment.create({
       data: { inventoryId, itemId, type, quantity },
     });
   }
 
   public async update(
-    { inventoryId, itemId, quantity, type }: IMovimentUpdate,
+    { inventoryId, itemId, quantity, type }: IUpdateMovimentDTO,
     id: string,
   ): Promise<Moviment> {
     return await prisma.moviment.update({

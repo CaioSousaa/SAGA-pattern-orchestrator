@@ -10,6 +10,6 @@ export enum SagaTopicsSubscribe {
   ORDER_FAILED = 'micro-order-failed',
   PAYMENT_SUCCESS = 'micro-payment-success',
   PAYMENT_FAILED = 'micro-payment-failed',
-  INVENTORY_SUCCESS = 'micro-transation-in-inventory-success',
-  INVENTORY_FAILED = 'micro-transation-in-inventory-FAILDED',
+  INVENTORY_SUCCESS = 'micro-transaction-in-inventory-success',
+  INVENTORY_FAILED = 'micro-transaction-in-inventory-failed',
 }

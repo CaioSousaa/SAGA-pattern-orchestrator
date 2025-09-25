@@ -1,12 +1,8 @@
 import { Customer } from 'generated/prisma';
-
-export interface CreateCustomerDTO {
-  id: string;
-  balance: number;
-}
+import { ICreateCustomerDTO } from 'src/core/dtos/customer/ICreateCustomerDTO';
 
 export interface ICustomerRepositoryPort {
-  create({ balance, id }: CreateCustomerDTO): Promise<Customer>;
+  create({ balance, id }: ICreateCustomerDTO): Promise<Customer>;
   findById(id: string): Promise<Customer | null>;
   update(id: string, balance: number): Promise<Customer>;
 }

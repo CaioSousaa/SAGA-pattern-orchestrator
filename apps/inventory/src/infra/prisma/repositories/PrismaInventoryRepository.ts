@@ -1,10 +1,8 @@
 import prisma from 'src/database/prisma/prismaCliente';
 import { Inventory } from 'src/core/domain/entities/Inventory';
-import {
-  ICreateItemInInventory,
-  IInventoryRepositoryPort,
-  IUpdatedItemInInventory,
-} from 'src/usecases/ports/IInventoryRepositoryPort';
+import { IInventoryRepositoryPort } from 'src/usecases/ports/IInventoryRepositoryPort';
+import { ICreateItemInInventoryDTO } from 'src/core/dtos/inventory/ICreateItemInInventoryDTO';
+import { IUpdatedItemInInventoryDTO } from 'src/core/dtos/inventory/IUpdatedItemInInventoryDTO';
 
 export class PrismaInventoryRepository implements IInventoryRepositoryPort {
   public async update({
@@ -12,7 +10,7 @@ export class PrismaInventoryRepository implements IInventoryRepositoryPort {
     itemId,
     quantity,
     updatedAt,
-  }: IUpdatedItemInInventory): Promise<Inventory> {
+  }: IUpdatedItemInInventoryDTO): Promise<Inventory> {
     return await prisma.inventory.update({
       where: { id, itemId },
       data: { quantity, updatedAt },
@@ -21,7 +19,7 @@ export class PrismaInventoryRepository implements IInventoryRepositoryPort {
   public async createItemInInventory({
     itemId,
     quantity,
-  }: ICreateItemInInventory): Promise<Inventory> {
+  }: ICreateItemInInventoryDTO): Promise<Inventory> {
     return await prisma.inventory.create({ data: { itemId, quantity } });
   }
 

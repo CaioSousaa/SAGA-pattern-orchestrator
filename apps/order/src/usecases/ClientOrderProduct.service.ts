@@ -1,37 +1,38 @@
 import { Injectable } from '@nestjs/common';
 import { Consumer, Producer } from 'kafkajs';
-import { OrderPrismarRepository } from 'src/infra/prisma/repositories/OrderPrismaRepository';
 import { ProductPrismarRepository } from 'src/infra/prisma/repositories/ProductPrismaRepository';
 import { ClientPrismarRepository } from 'src/infra/prisma/repositories/ClientPrismaRepository';
 import { kafka } from 'src/core/config/kafka';
+import { OrderPrismaRepository } from 'src/infra/prisma/repositories/OrderPrismaRepository';
 
 @Injectable()
 export class ClientOrderProductService {
   private producer: Producer;
   private consumer: Consumer;
+  private readonly serviceTag = '[CLIENT-ORDER-PRODUCT-SERVICE]';
 
   constructor(
-    private orderPrismarRepository: OrderPrismarRepository,
-    private productPrismarRepository: ProductPrismarRepository,
-    private clientPrismarRepository: ClientPrismarRepository,
+    private readonly orderPrismarRepository: OrderPrismaRepository,
+    private readonly productPrismarRepository: ProductPrismarRepository,
+    private readonly clientPrismarRepository: ClientPrismarRepository,
   ) {}
 
   async onModuleInit() {
     this.producer = kafka.producer();
     await this.producer.connect();
-    console.log('ORDER PRODUCER CONNECTED');
+    console.log(`${this.serviceTag} Producer connected`);
 
     this.consumer = kafka.consumer({ groupId: 'create-order-group' });
     await this.consumer.connect();
-    console.log('[ORDER CONSUMER CONNECTED]');
     await this.consumer.subscribe({ topic: 'initial-flow-saga' });
+    console.log(
+      `${this.serviceTag} Consumer subscribed to topic: initial-flow-saga`,
+    );
 
     await this.consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         const rawValue = message.value?.toString();
-
         const data = rawValue ? JSON.parse(rawValue) : null;
-
         if (!data) return;
 
         let {
@@ -50,7 +51,6 @@ export class ClientOrderProductService {
           const clientExists = await this.clientPrismarRepository.findClient(
             String(userId),
           );
-
           if (!clientExists) {
             const newClient = await this.clientPrismarRepository.create({
               id: String(userId),
@@ -58,7 +58,6 @@ export class ClientOrderProductService {
               email: String(email),
               name: String(name),
             });
-
             userId = newClient.id;
             name = newClient.name;
             email = newClient.email;
@@ -68,22 +67,19 @@ export class ClientOrderProductService {
           const productExists = await this.productPrismarRepository.findById(
             String(productId),
           );
-
           if (!productExists) {
             const newProduct = await this.productPrismarRepository.create({
               id: String(productId),
               name: String(name_product),
               price: Number(price),
             });
-
             productId = newProduct.id;
             name_product = newProduct.name;
             price = newProduct.price;
           }
 
           const total = quantity * price;
-
-          await this.orderPrismarRepository.create({
+          const order = await this.orderPrismarRepository.create({
             clientId: userId,
             productId,
             quantity,
@@ -97,8 +93,9 @@ export class ClientOrderProductService {
             balance,
             sagaId,
             quantity,
-            status: 200,
-            service: 'order-service',
+            statusCode: 200,
+            orderId: order.id,
+            service: 'client-order-product-service',
           });
 
           await this.producer.send({
@@ -107,15 +104,18 @@ export class ClientOrderProductService {
           });
 
           console.log(
-            `[ORDER MICRO MESSAGE RECEIVED] Topic: ${topic} | Data:`,
+            `${this.serviceTag} Message received | topic: ${topic} | partition: ${partition} | data:`,
             data,
           );
-
-          console.log(`Message ${sendMessage} sent to topic micro-order`);
-
-          console.log('[ORDER MICRO] Order saved successfully!');
+          console.log(
+            `${this.serviceTag} Success message published | topic: micro-order-success | sagaId: ${sagaId}`,
+          );
+          console.log(`${this.serviceTag} Order saved successfully`);
         } catch (error) {
-          console.error('[ORDER MICRO] Error processing Kafka message:', error);
+          console.error(
+            `${this.serviceTag} Error processing Kafka message:`,
+            error,
+          );
           await this.producer.send({
             topic: 'micro-order-failed',
             messages: [
@@ -123,11 +123,14 @@ export class ClientOrderProductService {
                 value: JSON.stringify({
                   sagaId,
                   service: 'order-service',
-                  status: 400,
+                  statusCode: 400,
                 }),
               },
             ],
           });
+          console.log(
+            `${this.serviceTag} Failure message published | topic: micro-order-failed | sagaId: ${sagaId}`,
+          );
         }
       },
     });

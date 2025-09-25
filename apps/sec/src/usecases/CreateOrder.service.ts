@@ -26,16 +26,17 @@ export interface IResponse {
 @Injectable()
 export class CreateOrderService implements OnModuleInit {
   private producer: Producer;
+  private readonly serviceTag = '[CREATE-ORDER-SERVICE]';
 
   constructor(
-    private readonly prismaActionsRepository: PrismaActionsRepository,
-    private readonly prismaSagaRepository: PrismaSagaRepository,
+    private readonly actionsRepo: PrismaActionsRepository,
+    private readonly sagaRepo: PrismaSagaRepository,
   ) {}
 
   async onModuleInit() {
     this.producer = kafka.producer();
     await this.producer.connect();
-    console.log('[KAFKA-PRODUCER CONNECTED]');
+    console.log(`${this.serviceTag} Kafka producer connected`);
   }
 
   private async sendMessage(message: string, topic: SagaTopicsSent) {
@@ -44,27 +45,26 @@ export class CreateOrderService implements OnModuleInit {
       messages: [{ value: message }],
     });
 
-    console.log(`[KAFKA MESSAGE SENT] Topic: ${topic} | Value: ${message}`);
+    console.log(
+      `${this.serviceTag} Message sent | topic: ${topic} | value: ${message}`,
+    );
   }
 
   public async execute(data?: IRequest): Promise<IResponse> {
     try {
       const validatedData = validateRequest(data);
 
-      const saga = await this.prismaSagaRepository.create({
+      const saga = await this.sagaRepo.create({
         name_flow: 'start flow',
         status: Status.PENDING,
       });
 
-      await this.prismaActionsRepository.create({
+      await this.actionsRepo.create({
         name_action: 'sent: create order',
         saga_id: saga.id!,
       });
 
-      const message = {
-        ...validatedData,
-        sagaId: saga.id,
-      };
+      const message = { ...validatedData, sagaId: saga.id };
 
       await this.sendMessage(
         JSON.stringify(message),
@@ -76,7 +76,7 @@ export class CreateOrderService implements OnModuleInit {
         message: 'Order created and event sent successfully',
       };
     } catch (error) {
-      console.error('[CreateOrderService] Failed to create order:', error);
+      console.error(`${this.serviceTag} Failed to create order:`, error);
 
       return {
         status: 'error',

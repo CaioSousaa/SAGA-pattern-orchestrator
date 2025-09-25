@@ -12,7 +12,7 @@ export class PrismaSagaRepository implements ISagaRepositoryPort {
       SELECT 1
       FROM action a
       WHERE a.saga_id = ${sagaId}
-        AND a.name_action IN ('recevid: payment_service', 'recevid: moviment_service')
+        AND a.name_action IN ('received: payment_service', 'received: inventory-moviment-service')
       GROUP BY a.saga_id
       HAVING COUNT(DISTINCT a.name_action) = 2
     ) AS "exists";

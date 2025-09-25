@@ -26,3 +26,16 @@ model Payment {
 
   @@map("payment")
 }
+
+model CustomerPaymentHistory {
+  id                      String   @id @default(uuid())
+  customerId              String
+  paymentId               Int     
+  balanceAfterPayment     Int
+  totalPayable            Int      
+  sagaId                  String   @unique
+  createdAt               DateTime @default(now())
+
+  @@map("customer_payment_history")
+
+}

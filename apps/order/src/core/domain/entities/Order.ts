@@ -1,3 +1,4 @@
+import { OrderStatus } from 'generated/prisma';
 import { Client } from 'src/core/domain/entities/Client';
 import { Product } from 'src/core/domain/entities/Product';
 
@@ -8,6 +9,7 @@ export class Order {
   productId: string;
   product?: Product;
   quantity: number;
+  status?: OrderStatus;
   total: number;
   createdAt: Date;
 

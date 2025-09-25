@@ -1,24 +1,15 @@
-import { MovimentType } from 'generated/prisma';
 import { Moviment } from 'src/core/domain/entities/Moviment';
-
-export interface IMovimentCreate {
-  itemId: string;
-  inventoryId: string;
-  type: MovimentType;
-  quantity: number;
-}
-
-export interface IMovimentUpdate {
-  itemId: string;
-  inventoryId: string;
-  quantity: number;
-  type: MovimentType;
-}
+import { ICreateMovimentDTO } from 'src/core/dtos/moviment/ICreateMovimentDTO';
+import { IUpdateMovimentDTO } from 'src/core/dtos/moviment/IUpdateMovimentDTO';
 
 export interface IMovimentRepositoryPort {
-  create({ inventoryId, itemId, quantity }: IMovimentCreate): Promise<Moviment>;
+  create({
+    inventoryId,
+    itemId,
+    quantity,
+  }: ICreateMovimentDTO): Promise<Moviment>;
   update(
-    { inventoryId, itemId, quantity, type }: IMovimentUpdate,
+    { inventoryId, itemId, quantity, type }: IUpdateMovimentDTO,
     id: string,
   ): Promise<Moviment>;
 }

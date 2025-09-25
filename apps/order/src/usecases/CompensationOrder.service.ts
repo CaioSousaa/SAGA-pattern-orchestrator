@@ -1,27 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { Consumer, Producer } from 'kafkajs';
 
-import { ClientPrismarRepository } from 'src/infra/prisma/repositories/ClientPrismaRepository';
 import { kafka } from 'src/core/config/kafka';
+import { OrderPrismaRepository } from 'src/infra/prisma/repositories/OrderPrismaRepository';
 
 @Injectable()
-export class UpdateClientBalanceService {
+export class CompensationOrderService {
   private producer: Producer;
   private consumer: Consumer;
-  private readonly serviceTag = '[BALANCE-SERVICE]';
+  private readonly serviceTag = '[COMPENSATION-ORDER-SERVICE]';
 
-  constructor(private readonly clientRepository: ClientPrismarRepository) {}
+  constructor(private readonly orderPrismaRepository: OrderPrismaRepository) {}
 
   async onModuleInit() {
     this.producer = kafka.producer();
     await this.producer.connect();
 
-    this.consumer = kafka.consumer({ groupId: 'update-balance-group' });
+    this.consumer = kafka.consumer({ groupId: 'compensation-order-group' });
     await this.consumer.connect();
 
     console.log(`${this.serviceTag} Consumer connected successfully`);
 
-    await this.consumer.subscribe({ topic: 'virtualization-balance-update' });
+    await this.consumer.subscribe({ topic: 'compensation-order-service' });
 
     await this.consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
@@ -29,7 +29,7 @@ export class UpdateClientBalanceService {
         const payload = rawMessage ? JSON.parse(rawMessage) : null;
         if (!payload) return;
 
-        const { userId, newBalance, service, sagaId } = payload;
+        const { orderId, service_name } = payload;
 
         console.log(
           `${this.serviceTag} Message received | topic: ${topic} | partition: ${partition} | payload:`,
@@ -37,22 +37,16 @@ export class UpdateClientBalanceService {
         );
 
         try {
-          if (!userId || newBalance === undefined) {
-            console.warn(
-              `${this.serviceTag} Invalid message: userId or newBalance is missing`,
-            );
-            return;
-          }
-
-          const updatedClient = await this.clientRepository.updateClient(
-            String(userId),
-            Number(newBalance),
-          );
+          const orderCompensated =
+            await this.orderPrismaRepository.compensationOrder(String(orderId));
 
           console.log(
-            `${this.serviceTag} Balance updated successfully | clientId: ${userId} | newBalance: ${newBalance}`,
+            `${this.serviceTag} Compensation executed successfully | orderId: ${orderId} | service: ${service_name}`,
           );
-          console.log(`${this.serviceTag} Updated client:`, updatedClient);
+          console.log(
+            `${this.serviceTag} Order compensated:`,
+            orderCompensated,
+          );
         } catch (error) {
           console.error(
             `${this.serviceTag} Error processing Kafka message:`,
@@ -60,20 +54,20 @@ export class UpdateClientBalanceService {
           );
 
           await this.producer.send({
-            topic: 'micro-order-failed',
+            topic: 'compensation-order-failed',
             messages: [
               {
                 value: JSON.stringify({
-                  sagaId,
-                  service: 'order-service',
+                  service: 'compensation-order-service',
                   status: 400,
+                  orderId,
                 }),
               },
             ],
           });
 
           console.log(
-            `${this.serviceTag} Failure message published | topic: micro-order-failed | sagaId: ${sagaId}`,
+            `${this.serviceTag} Failure message published | topic: compensation-order-failed | orderId: ${orderId}`,
           );
         }
       },
