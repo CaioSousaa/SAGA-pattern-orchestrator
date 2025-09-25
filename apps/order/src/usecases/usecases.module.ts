@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ClientOrderProductService } from './ClientOrderProduct.service';
 import { ClientPrismarRepository } from 'src/infra/prisma/repositories/ClientPrismaRepository';
-import { OrderPrismarRepository } from 'src/infra/prisma/repositories/OrderPrismaRepository';
+import { OrderPrismaRepository } from 'src/infra/prisma/repositories/OrderPrismaRepository';
 import { ProductPrismarRepository } from 'src/infra/prisma/repositories/ProductPrismaRepository';
+import { UpdateClientBalanceService } from './UpdateClientBalance.service';
 
 @Module({
   imports: [],
@@ -10,8 +11,9 @@ import { ProductPrismarRepository } from 'src/infra/prisma/repositories/ProductP
   providers: [
     ClientOrderProductService,
     ClientPrismarRepository,
-    OrderPrismarRepository,
+    OrderPrismaRepository,
     ProductPrismarRepository,
+    UpdateClientBalanceService,
   ],
 })
 export class UseCasesModule {}

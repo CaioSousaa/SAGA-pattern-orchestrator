@@ -33,8 +33,15 @@ model Order {
   productId String
   quantity  Int
   total     Float
+  status    OrderStatus @default(STARTED)
   createdAt DateTime @default(now())
 
   client    Client   @relation(fields: [clientId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
+}
+
+enum OrderStatus {
+  STARTED
+  FAILED
+  FINISHED
 }

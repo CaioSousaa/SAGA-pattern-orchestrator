@@ -3,4 +3,5 @@ import { ICreateOrderDTO } from 'src/core/dtos/ICreateOrderDTO';
 
 export interface IOrderRepositoryPort {
   create(data: ICreateOrderDTO): Promise<Order>;
+  compensationOrder(orderId: string): Promise<void>;
 }

@@ -4,6 +4,7 @@ import { CreateOrderService } from './CreateOrder.service';
 import { PrismaSagaRepository } from 'src/infra/prisma/repositories/PrismaSagaRepository';
 import { PrismaActionsRepository } from 'src/infra/prisma/repositories/PrismaActionsRepository';
 import { SagaController } from 'src/infra/http/controller/saga.controller';
+import { CompleteOrder } from './CompleteOrder.service';
 
 @Module({
   imports: [],
@@ -13,6 +14,7 @@ import { SagaController } from 'src/infra/http/controller/saga.controller';
     PrismaSagaRepository,
     PrismaActionsRepository,
     ConfirmOrderService,
+    CompleteOrder,
   ],
 })
 export class UseCasesModule {}

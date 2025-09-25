@@ -1,11 +1,11 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Producer, Consumer } from 'kafkajs';
+import { Producer } from 'kafkajs';
 import { PrismaActionsRepository } from '../infra/prisma/repositories/PrismaActionsRepository';
 import { PrismaSagaRepository } from '../infra/prisma/repositories/PrismaSagaRepository';
 import { Status } from 'generated/prisma';
 import { kafka } from '../core/config/kafka';
-import { SagaTopics } from 'src/core/domain/enums/TopicsEnum';
 import { validateRequest } from './utils/function/validateRequestCreateOrderService';
+import { SagaTopicsSent } from 'src/core/domain/enums/TopicsEnum';
 
 export interface IRequest {
   userId: string;
@@ -26,69 +26,57 @@ export interface IResponse {
 @Injectable()
 export class CreateOrderService implements OnModuleInit {
   private producer: Producer;
-  private consumer: Consumer;
+  private readonly serviceTag = '[CREATE-ORDER-SERVICE]';
 
   constructor(
-    private readonly prismaActionsRepository: PrismaActionsRepository,
-    private readonly prismaSagaRepository: PrismaSagaRepository,
+    private readonly actionsRepo: PrismaActionsRepository,
+    private readonly sagaRepo: PrismaSagaRepository,
   ) {}
 
   async onModuleInit() {
     this.producer = kafka.producer();
     await this.producer.connect();
-    console.log('[KAFKA-INITIAL-FLOW PRODUCER CONNECTED]');
-
-    this.consumer = kafka.consumer({ groupId: 'saga-create-order-group' });
-    await this.consumer.connect();
-    console.log('[KAFKA-INITIAL-FLOW CONSUMER CONNECTED]');
-
-    await this.consumer.subscribe({ topic: SagaTopics.ORDER });
-
-    await this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        console.log(
-          `[KAFKA MESSAGE RECEIVED] Topic: ${topic} | Value: ${message.value?.toString()}`,
-        );
-      },
-    });
+    console.log(`${this.serviceTag} Kafka producer connected`);
   }
 
-  private async sendMessage(message: string, topic: SagaTopics) {
+  private async sendMessage(message: string, topic: SagaTopicsSent) {
     await this.producer.send({
       topic,
       messages: [{ value: message }],
     });
 
-    console.log(`Message ${message} sent to topic ${topic}`);
+    console.log(
+      `${this.serviceTag} Message sent | topic: ${topic} | value: ${message}`,
+    );
   }
 
   public async execute(data?: IRequest): Promise<IResponse> {
     try {
       const validatedData = validateRequest(data);
 
-      const saga = await this.prismaSagaRepository.create({
+      const saga = await this.sagaRepo.create({
         name_flow: 'start flow',
         status: Status.PENDING,
       });
 
-      await this.prismaActionsRepository.create({
-        name_action: 'create order',
+      await this.actionsRepo.create({
+        name_action: 'sent: create order',
         saga_id: saga.id!,
       });
 
-      const message = {
-        ...validatedData,
-        sagaId: saga.id,
-      };
+      const message = { ...validatedData, sagaId: saga.id };
 
-      await this.sendMessage(JSON.stringify(message), SagaTopics.INITIAL_FLOW);
+      await this.sendMessage(
+        JSON.stringify(message),
+        SagaTopicsSent.INITIAL_FLOW,
+      );
 
       return {
         status: 'success',
         message: 'Order created and event sent successfully',
       };
     } catch (error) {
-      console.error('[CreateOrderService] Failed to create order:', error);
+      console.error(`${this.serviceTag} Failed to create order:`, error);
 
       return {
         status: 'error',

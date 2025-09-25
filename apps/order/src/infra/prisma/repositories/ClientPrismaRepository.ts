@@ -4,6 +4,13 @@ import { ICreateClientDTO } from 'src/core/dtos/ICreateClientDTO';
 import { IClientRepositoryPort } from 'src/usecases/ports/IClientRepositoryPort';
 
 export class ClientPrismarRepository implements IClientRepositoryPort {
+  public async updateClient(id: string, newBalance: number): Promise<Client> {
+    return await prisma.client.update({
+      where: { id },
+      data: { balance: newBalance },
+    });
+  }
+
   public async create({
     id,
     balance,
